@@ -6,9 +6,11 @@ namespace Booking_Module.Mappings
 {
     public class MappingProfile : Profile
     {
-        protected MappingProfile()
+        public MappingProfile()
         {
-            CreateMap<Booking, BookingVm>();
+            CreateMap<Booking, BookingVm>()
+                .ForMember(dest => dest.StartHour, opt => opt.MapFrom(src => src.TimeBlock.StartHour))
+                .ForMember(dest => dest.EndHour, opt => opt.MapFrom(src => src.TimeBlock.EndHour));
         }
     }
 }

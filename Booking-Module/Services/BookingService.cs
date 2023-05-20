@@ -20,25 +20,38 @@ namespace Booking_Module.Services
             _mapper = mapper;
         }
 
-        public async Task<int> AddBooking(AddBookingRequest bookingData)
+        public async Task<BookingVm> AddBooking(AddBookingRequest bookingData)
         {
-            var bookingCount = await GetBookingCountByDay(bookingData.Date);
-            if (bookingCount == bookingData.NumberOfPeople)
-                throw new BadRequestException($"The Establishment with id {bookingData.EstablishmentId} has no space available");
-
+            var timeBlock = await _context.TimeBlocks.FirstOrDefaultAsync(tb => tb.Id == bookingData.BlockId);
             var booking = new Booking
             {
+                Id = Guid.NewGuid(),
                 UserId = bookingData.UserId,
                 EstablishmentId = bookingData.EstablishmentId,
                 Date = bookingData.Date,
-                Hour = bookingData.Hour,
-                CreateAt = DateTime.Now
+                TimeBlockId = bookingData.BlockId,
+                NumberOfPeople = bookingData.NumberOfPeople,
+                CreateAt = DateTime.Now,
+                IsActive = true,
+                TimeBlock = timeBlock
             };
 
             _context.Bookings.AddAsync(booking);
             await _context.SaveChangesAsync();
 
-            return booking.Id;
+            return _mapper.Map<BookingVm>(booking);
+        }
+
+        public async Task<int> GetBookingCount(string establishmentId, BookingParams @params)
+        {
+            var bookingCount = await _context.Bookings
+            .Where(b => b.EstablishmentId == establishmentId
+            && b.TimeBlockId == @params.BlockId 
+            && b.Date.Day == @params.Date.Day
+            && b.IsActive)
+            .SumAsync(b => b.NumberOfPeople);
+
+            return bookingCount;
         }
 
         public async Task<List<BookingVm>> GetAll()
@@ -50,16 +63,16 @@ namespace Booking_Module.Services
             return _mapper.Map<List<BookingVm>>(bookings);
         }
 
-        public async Task<BookingVm> GetById(int bookingId)
+        public async Task<BookingVm> GetById(Guid bookingId)
         {
-            var booking = await _context.Bookings.FirstOrDefaultAsync(b => b.Id == bookingId);
+            var booking = await _context.Bookings.Include(b => b.TimeBlock).FirstOrDefaultAsync(b => b.Id == bookingId);
             if (booking == null)
                 throw new NotFoundException($"Booking with id {bookingId} was not found");
             
             return _mapper.Map<BookingVm>(booking);
         }
 
-        public async Task DeleteById(int bookingId)
+        public async Task DeleteById(Guid bookingId)
         {
             var booking = await _context.Bookings.FirstOrDefaultAsync(b => b.Id == bookingId);
             if (booking == null)
@@ -69,20 +82,16 @@ namespace Booking_Module.Services
             await _context.SaveChangesAsync();
         }
 
-        public async Task<int> PutById(AddBookingRequest bookingData, int bookingId)
+        public async Task<Guid> PutById(AddBookingRequest bookingData, Guid bookingId)
         {
             var booking = await _context.Bookings.FirstOrDefaultAsync(b => b.Id == bookingId);
             if(booking == null)
                 throw new NotFoundException($"Booking with id {bookingId} was not found");
 
-            var bookingCount = await GetBookingCountByDay(bookingData.Date);
-            if (bookingCount == bookingData.NumberOfPeople)
-                throw new BadRequestException($"The Establishment with id {bookingData.EstablishmentId} has no space available");
-
             booking.UserId = bookingData.UserId;
             booking.EstablishmentId = bookingData.EstablishmentId;
             booking.Date = bookingData.Date;
-            booking.Hour = bookingData.Hour;
+            booking.TimeBlockId = bookingData.BlockId;
             booking.UpdateAt = DateTime.Now;
 
             _context.Update(booking);
@@ -90,10 +99,15 @@ namespace Booking_Module.Services
             return booking.Id;
         }
 
-        private async Task<int> GetBookingCountByDay(DateTime bookingDate)
+        public async Task<List<BookingVm>> GetBokingByUserId(string userId, BookingParams @params)
         {
-            var bookingCount = await _context.Bookings.Where(b => b.Date.Day == bookingDate.Day).CountAsync();
-            return bookingCount;
+            var bookings = await _context.Bookings
+                .Where(b => b.UserId == userId 
+                && b.Date.Day == @params.Date.Day 
+                && b.TimeBlockId == @params.BlockId
+                && b.IsActive).Include(b => b.TimeBlock).ToListAsync();
+            
+            return _mapper.Map<List<BookingVm>>(bookings);
         }
     }
 }

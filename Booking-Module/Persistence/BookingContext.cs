@@ -10,5 +10,6 @@ namespace Booking_Module.Persistence
         }
 
         public DbSet<Booking> Bookings { get; set; }
+        public DbSet<TimeBlock> TimeBlocks { get; set; }
     }
 }

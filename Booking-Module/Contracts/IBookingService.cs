@@ -5,10 +5,12 @@ namespace Booking_Module.Contracts
 {
     public interface IBookingService
     {
-        Task<int> AddBooking(AddBookingRequest booking);
+        Task<BookingVm> AddBooking(AddBookingRequest booking);
+        Task<int> GetBookingCount(string establishmentId, BookingParams @params);
         Task<List<BookingVm>> GetAll();
-        Task<BookingVm> GetById(int bookingId);
-        Task<int> PutById(AddBookingRequest request, int bookingId);
-        Task DeleteById(int bookingId);
+        Task<BookingVm> GetById(Guid bookingId);
+        Task<Guid> PutById(AddBookingRequest request, Guid bookingId);
+        Task DeleteById(Guid bookingId);
+        Task<List<BookingVm>> GetBokingByUserId(string userId, BookingParams @params);
     }
 }

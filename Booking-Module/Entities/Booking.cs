@@ -1,14 +1,16 @@
-﻿namespace Booking_Module.Entities
+﻿using Booking_Module.Entities.Common;
+
+namespace Booking_Module.Entities
 {
-    public class Booking
+    public class Booking : Entity
     {
-        public int Id { get; set; }
-        public int UserId { get; set; }
-        public int EstablishmentId { get; set; }
+        public Guid Id { get; set; }
+        public string UserId { get; set; }
+        public string EstablishmentId { get; set; }
         public DateTime Date { get; set; }
-        public DateTime Hour { get; set; }
-        public DateTime CreateAt { get; set; }
-        public DateTime UpdateAt { get; set; }
-        public bool IsActive { get; set; }
+        public int TimeBlockId { get; set; }
+        public virtual TimeBlock TimeBlock { get; set; }
+        public int NumberOfPeople { get; set; }
+        public DateTime? UpdateAt { get; set; }
     }
 }
