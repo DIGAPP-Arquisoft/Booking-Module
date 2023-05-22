@@ -6,6 +6,7 @@ using Booking_Module.Models;
 using Booking_Module.Models.ViewModels;
 using Booking_Module.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 
 namespace Booking_Module.Services
 {
@@ -42,16 +43,16 @@ namespace Booking_Module.Services
             return _mapper.Map<BookingVm>(booking);
         }
 
-        public async Task<int> GetBookingCount(string establishmentId, BookingParams @params)
+        public async Task<GetCountBookingsResponse> GetBookingCount(string establishmentId, BookingParams @params)
         {
             var bookingCount = await _context.Bookings
             .Where(b => b.EstablishmentId == establishmentId
             && b.TimeBlockId == @params.BlockId 
-            && b.Date.Day == @params.Date.Day
+            && b.Date.Day == ((DateTime)@params.Date).Day
             && b.IsActive)
             .SumAsync(b => b.NumberOfPeople);
 
-            return bookingCount;
+            return new GetCountBookingsResponse { Total = bookingCount};
         }
 
         public async Task<List<BookingVm>> GetAll()
@@ -101,12 +102,16 @@ namespace Booking_Module.Services
 
         public async Task<List<BookingVm>> GetBokingByUserId(string userId, BookingParams @params)
         {
-            var bookings = await _context.Bookings
-                .Where(b => b.UserId == userId 
-                && b.Date.Day == @params.Date.Day 
-                && b.TimeBlockId == @params.BlockId
-                && b.IsActive).Include(b => b.TimeBlock).ToListAsync();
-            
+            var query = _context.Bookings
+                .Where(b => b.UserId == userId && b.IsActive && b.Date >= DateTime.Now);
+
+            if (!@params.Date.ToString().IsNullOrEmpty())
+                query = query.Where(b => b.Date == (DateTime)@params.Date);
+
+            if (@params.BlockId != null)
+                query = query.Where(b => b.TimeBlockId == @params.BlockId);
+
+            var bookings = await query.Include(b => b.TimeBlock).ToListAsync();            
             return _mapper.Map<List<BookingVm>>(bookings);
         }
     }

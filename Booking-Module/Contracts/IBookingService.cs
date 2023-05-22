@@ -6,7 +6,7 @@ namespace Booking_Module.Contracts
     public interface IBookingService
     {
         Task<BookingVm> AddBooking(AddBookingRequest booking);
-        Task<int> GetBookingCount(string establishmentId, BookingParams @params);
+        Task<GetCountBookingsResponse> GetBookingCount(string establishmentId, BookingParams @params);
         Task<List<BookingVm>> GetAll();
         Task<BookingVm> GetById(Guid bookingId);
         Task<Guid> PutById(AddBookingRequest request, Guid bookingId);
