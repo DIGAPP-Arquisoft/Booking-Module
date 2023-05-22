@@ -2,7 +2,7 @@
 {
     public class BookingParams
     {
-        public DateTime Date { get; set; }
-        public int BlockId { get; set; }
+        public DateTime? Date { get; set; }
+        public int? BlockId { get; set; }
     }
 }
